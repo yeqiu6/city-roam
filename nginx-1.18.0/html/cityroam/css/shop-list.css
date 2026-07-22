@@ -100,3 +100,6 @@
     line-height: 20px;
     overflow: hidden;
 }
+
+.header { background: linear-gradient(135deg, var(--roam-navy), var(--roam-blue)); }
+.shop-box { border-radius: 14px; box-shadow: var(--roam-card-shadow); margin: 10px 12px; }

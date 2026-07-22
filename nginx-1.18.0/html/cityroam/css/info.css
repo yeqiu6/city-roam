@@ -230,3 +230,6 @@
     height: 75%;
     margin-right: 2px;
 }
+
+.header { background: linear-gradient(135deg, var(--roam-navy), var(--roam-blue)); }
+.shop-dialog, .info-box, .edit-container { border-radius: 14px; box-shadow: var(--roam-card-shadow); }

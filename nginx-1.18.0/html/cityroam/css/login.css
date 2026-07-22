@@ -61,3 +61,7 @@ input[type="radio"]:checked + label::before {
 input[type="radio"] {
     opacity: 0;
 }
+
+.login-container { background: linear-gradient(155deg, #eef5ff, #fff7f1); }
+.header { background: linear-gradient(135deg, var(--roam-navy), var(--roam-blue)); }
+.login-form { border-radius: 16px; box-shadow: var(--roam-card-shadow); background: #fff; padding: 20px; }

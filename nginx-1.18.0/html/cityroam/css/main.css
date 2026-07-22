@@ -57,3 +57,29 @@ html,body,#app{
     margin-right: 0;
 }
 
+:root {
+    --roam-navy: #12355b;
+    --roam-blue: #1d5d9b;
+    --roam-orange: #ff8a3d;
+    --roam-cream: #f6f8fb;
+    --roam-text: #1d2a3a;
+    --roam-muted: #718096;
+    --roam-card-shadow: 0 10px 28px rgba(18, 53, 91, 0.10);
+}
+
+body {
+    color: var(--roam-text);
+    background: var(--roam-cream);
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+.foot {
+    height: 64px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 -8px 28px rgba(18, 53, 91, 0.08);
+}
+
+.active, .el-tabs__item.is-active {
+    color: var(--roam-orange);
+}
+
