@@ -157,10 +157,9 @@ cd city-roam
 
 ### 2. 初始化数据库
 
-在 MySQL 中创建数据库并导入建表语句与种子数据：
+请先在 MySQL 中创建 `application.yaml` 的 `spring.datasource.url` 所指定的数据库，然后执行：
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS <database_name> DEFAULT CHARSET utf8mb4;"
 mysql -u root -p hmdp < src/main/resources/db/cityroam.sql
 ```
 
