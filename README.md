@@ -160,7 +160,7 @@ cd city-roam
 在 MySQL 中创建数据库并导入建表语句与种子数据：
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hmdp DEFAULT CHARSET utf8mb4;"
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS <database_name> DEFAULT CHARSET utf8mb4;"
 mysql -u root -p hmdp < src/main/resources/db/cityroam.sql
 ```
 

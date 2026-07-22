@@ -8,19 +8,19 @@
 
 ### 前端
 
-- 将静态资源目录从 `nginx-1.18.0/html/hmdp` 迁移为 `nginx-1.18.0/html/cityroam`，同步 Nginx 静态资源根目录。
+- 静态资源目录已从旧目录迁移为 `nginx-1.18.0/html/cityroam`，Nginx 静态资源根目录已同步更新。
 - 更新所有页面的浏览器标题、可见文案和品牌表述为“城市漫游”语境。
 - 以深海蓝、暖橙、浅灰背景和圆角卡片为基础，统一首页、店铺、笔记、个人中心和登录页面的视觉细节。
 - 不修改接口路径、接口字段或 Vue 页面间跳转逻辑。
 
 ### 后端与工程配置
 
-- 将 Java 基础包由 `com.hmdp` 迁移至 `com.cityroam`，同步所有源码、测试、MyBatis XML 命名空间和配置扫描路径。
-- 将启动类由 `HmDianPingApplication` 更名为 `CityRoamApplication`。
-- 将 Maven `groupId`、`artifactId`、名称与描述改为城市漫游品牌信息。
-- 将 Spring 应用名称改为 `city-roam`；数据库连接仍使用既有 `hmdp` 数据库，避免数据初始化及本地环境兼容性风险。
-- 将初始化脚本重命名为 `cityroam.sql`；脚本内数据表和 SQL 内容不做业务性改动。
-- 更新 README 中的名称、目录、启动说明和数据库导入说明。
+- Java 基础包已由旧包名迁移至 `com.cityroam`，源码、测试、MyBatis XML 命名空间和配置扫描路径已同步。
+- 启动类已更名为 `CityRoamApplication`。
+- Maven `groupId`、`artifactId`、名称与描述已改为城市漫游品牌信息。
+- Spring 应用名称已改为 `city-roam`。为保留本地数据初始化兼容性，数据库名仍使用 `hmdp`；该兼容项仅保留在 `application.yaml` 和 README 的数据源/导入说明中。
+- 初始化脚本已重命名为 `cityroam.sql`；脚本内数据表和 SQL 内容未作业务性改动。
+- README 已更新为城市漫游名称、目录、启动说明和数据库导入说明。
 
 ## 非目标
 
@@ -31,5 +31,5 @@
 ## 验证
 
 1. 运行 Maven 测试与打包，确认包名、启动类和 MyBatis 扫描均正常。
-2. 使用全文检索检查源码、前端公开资源、配置、SQL 和 README，确保不再出现 `hmdp`、`hmdianping`、`黑马点评`（数据库名保留为兼容项，并在最终说明中明确）。
+2. 使用全文检索检查源码、前端公开资源、配置、SQL 和 README，确保不再出现旧品牌标识；`hmdp` 仅作为数据库名兼容项保留在 `application.yaml` 和 README 的数据源/导入说明中。
 3. 检查 Nginx 配置与前端资源引用，确保迁移后的 `cityroam` 目录能够正确加载页面、样式和图片。
