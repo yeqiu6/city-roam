@@ -1,4 +1,4 @@
-# 本地生活服务平台（hm-dianping）
+# 城市漫游（City Roam）
 
 一个基于 Spring Boot + Redis + Nginx 的本地生活服务点评与秒杀平台，实现了店铺浏览、优惠券秒杀、探店笔记分享、点赞互动等核心功能。前后端分离架构，开箱即用。
 
@@ -36,7 +36,7 @@
 │               Nginx 1.18.0 (Port 8080)                    │
 │  ┌──────────────────┐   ┌───────────────────────────┐    │
 │  │  静态资源服务       │   │  反向代理 /api → 后端       │    │
-│  │  html/hmdp/       │   │  http://127.0.0.1:8081    │    │
+│  │  html/cityroam/   │   │  http://127.0.0.1:8081    │    │
 │  └──────────────────┘   └───────────┬───────────────┘    │
 └─────────────────────────────────────┼────────────────────┘
                                       │
@@ -151,8 +151,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yeqiu6/hmdp-project.git
-cd hmdp-project
+git clone <your-repository-url>
+cd city-roam
 ```
 
 ### 2. 初始化数据库
@@ -161,7 +161,7 @@ cd hmdp-project
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hmdp DEFAULT CHARSET utf8mb4;"
-mysql -u root -p hmdp < src/main/resources/db/hmdp.sql
+mysql -u root -p hmdp < src/main/resources/db/cityroam.sql
 ```
 
 ### 3. 修改后端配置
@@ -225,11 +225,11 @@ mvn test
 ## 项目结构
 
 ```
-hmdp/
+city-roam/
 ├── nginx-1.18.0/                     # 前端 — Nginx + 静态页面
 │   ├── nginx.exe                     #   Nginx 启动程序（双击运行）
 │   ├── conf/nginx.conf               #   Nginx 配置（端口 8080，反向代理 /api → 8081）
-│   ├── html/hmdp/                    #   前端静态资源
+│   ├── html/cityroam/                 #   前端静态资源
 │   │   ├── index.html                #     首页
 │   │   ├── login.html                #     登录页
 │   │   ├── shop-list.html            #     店铺列表
@@ -244,8 +244,8 @@ hmdp/
 │   │   └── imgs/                     #     图片资源
 │   └── logs/                         #   Nginx 日志
 ├── src/
-│   ├── main/java/com/hmdp/
-│   │   ├── HmDianPingApplication.java      # 启动类
+│   ├── main/java/com/cityroam/
+│   │   ├── CityRoamApplication.java        # 启动类
 │   │   ├── config/                          # 配置类
 │   │   │   ├── MvcConfig.java               #   MVC 拦截器注册
 │   │   │   ├── MybatisConfig.java           #   MyBatis-Plus 分页插件
@@ -281,7 +281,7 @@ hmdp/
 │   │       └── UserHolder.java              #   ThreadLocal 用户上下文
 │   └── main/resources/
 │       ├── application.yaml                 #   应用配置
-│       ├── db/hmdp.sql                      #   数据库初始化脚本
+│       ├── db/cityroam.sql                  #   数据库初始化脚本
 │       ├── seckill.lua                      #   秒杀 Lua 脚本
 │       ├── unlock.lua                       #   分布式锁释放脚本
 │       └── mapper/                          #   MyBatis XML 映射文件
