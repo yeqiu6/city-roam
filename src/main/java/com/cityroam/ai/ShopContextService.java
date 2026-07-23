@@ -20,6 +20,14 @@ import java.util.stream.Collectors;
 public class ShopContextService {
 
     private static final int CONTEXT_LIMIT = 8;
+    private static final double EARTH_RADIUS_KM = 6371.0088D;
+    private static final String[][] ACTIVITY_ALIASES = {
+            {"聚餐", "美食"},
+            {"唱歌", "KTV"},
+            {"喝酒", "酒吧"},
+            {"聚会", "轰趴馆"},
+            {"放松", "按摩·足疗"}
+    };
     public static final String NO_MATCH_CONTEXT = "未找到与当前问题相关的商铺。";
 
     private final IShopService shopService;
@@ -31,30 +39,33 @@ public class ShopContextService {
     }
 
     public String retrieve(String query) {
+        return retrieve(query, null, null);
+    }
+
+    public String retrieve(String query, Double longitude, Double latitude) {
         List<Shop> shops = shopService.list();
         if (shops == null || shops.isEmpty()) {
             return NO_MATCH_CONTEXT;
         }
         Map<Long, String> typeNames = typeNames();
-        List<String> terms = terms(query);
+        List<String> terms = terms(query, typeNames.values());
         if (terms.isEmpty()) {
             return NO_MATCH_CONTEXT;
         }
+        boolean nearby = isNearbyQuery(query) && validCoordinates(longitude, latitude);
         List<RankedShop> rankedShops = new ArrayList<>();
         for (Shop shop : shops) {
             String typeName = typeNames.get(shop.getTypeId());
             int relevance = relevance(shop, typeName, terms);
             if (relevance > 0) {
-                rankedShops.add(new RankedShop(shop, typeName, relevance));
+                rankedShops.add(new RankedShop(shop, typeName, relevance,
+                        nearby ? distance(longitude, latitude, shop.getX(), shop.getY()) : null));
             }
         }
         if (rankedShops.isEmpty()) {
             return NO_MATCH_CONTEXT;
         }
-        rankedShops.sort(Comparator.comparingInt(RankedShop::getRelevance).reversed()
-                .thenComparing(RankedShop::getScore, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(RankedShop::getSold, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(RankedShop::getId, Comparator.nullsLast(Comparator.naturalOrder())));
+        rankedShops.sort(nearby ? nearbyComparator() : relevanceComparator());
         return rankedShops.stream()
                 .limit(CONTEXT_LIMIT)
                 .map(this::format)
@@ -69,7 +80,7 @@ public class ShopContextService {
         if (shop == null) {
             return null;
         }
-        return format(new RankedShop(shop, typeNames().get(shop.getTypeId()), 0));
+        return format(new RankedShop(shop, typeNames().get(shop.getTypeId()), 0, null));
     }
 
     private Map<Long, String> typeNames() {
@@ -84,18 +95,68 @@ public class ShopContextService {
         return names;
     }
 
-    private List<String> terms(String query) {
+    private List<String> terms(String query, Iterable<String> typeNames) {
         if (!StringUtils.hasText(query)) {
             return Collections.emptyList();
         }
-        String[] parts = query.toLowerCase(Locale.ROOT).trim().split("\\s+");
+        String normalized = query.toLowerCase(Locale.ROOT).trim();
+        String[] parts = normalized.split("\\s+");
         List<String> terms = new ArrayList<>();
+        terms.add(normalized);
         for (String part : parts) {
             if (StringUtils.hasText(part)) {
                 terms.add(part);
             }
         }
+        for (String typeName : typeNames) {
+            if (StringUtils.hasText(typeName) && normalized.contains(typeName.toLowerCase(Locale.ROOT))) {
+                terms.add(typeName);
+            }
+        }
+        for (String[] alias : ACTIVITY_ALIASES) {
+            if (normalized.contains(alias[0])) {
+                terms.add(alias[1]);
+            }
+        }
         return terms;
+    }
+
+    private Comparator<RankedShop> relevanceComparator() {
+        return Comparator.comparingInt(RankedShop::getRelevance).reversed()
+                .thenComparing(RankedShop::getScore, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(RankedShop::getSold, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(RankedShop::getId, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private Comparator<RankedShop> nearbyComparator() {
+        return Comparator.comparing(RankedShop::getDistance, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(RankedShop::getScore, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(RankedShop::getSold, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(RankedShop::getId, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private boolean isNearbyQuery(String query) {
+        return StringUtils.hasText(query) && query.contains("附近");
+    }
+
+    private boolean validCoordinates(Double longitude, Double latitude) {
+        return longitude != null && latitude != null
+                && !longitude.isNaN() && !longitude.isInfinite()
+                && !latitude.isNaN() && !latitude.isInfinite()
+                && longitude >= -180D && longitude <= 180D
+                && latitude >= -90D && latitude <= 90D;
+    }
+
+    private Double distance(Double longitude, Double latitude, Double shopLongitude, Double shopLatitude) {
+        if (!validCoordinates(shopLongitude, shopLatitude)) {
+            return null;
+        }
+        double latitudeDelta = Math.toRadians(shopLatitude - latitude);
+        double longitudeDelta = Math.toRadians(shopLongitude - longitude);
+        double a = Math.sin(latitudeDelta / 2D) * Math.sin(latitudeDelta / 2D)
+                + Math.cos(Math.toRadians(latitude)) * Math.cos(Math.toRadians(shopLatitude))
+                * Math.sin(longitudeDelta / 2D) * Math.sin(longitudeDelta / 2D);
+        return EARTH_RADIUS_KM * 2D * Math.atan2(Math.sqrt(a), Math.sqrt(1D - a));
     }
 
     private int relevance(Shop shop, String typeName, List<String> terms) {
@@ -124,7 +185,13 @@ public class ShopContextService {
                 + "\n分类：" + value(rankedShop.getTypeName())
                 + "\n地址：" + value(shop.getAddress())
                 + "\n人均：" + value(shop.getAvgPrice())
-                + "\n评分：" + score(shop.getScore());
+                + "\n评分：" + score(shop.getScore())
+                + distance(rankedShop);
+    }
+
+    private String distance(RankedShop rankedShop) {
+        return rankedShop.getDistance() == null ? ""
+                : String.format(Locale.ROOT, "\n距离：%.1fkm", rankedShop.getDistance());
     }
 
     private String score(Integer score) {
@@ -139,11 +206,13 @@ public class ShopContextService {
         private final Shop shop;
         private final String typeName;
         private final int relevance;
+        private final Double distance;
 
-        private RankedShop(Shop shop, String typeName, int relevance) {
+        private RankedShop(Shop shop, String typeName, int relevance, Double distance) {
             this.shop = shop;
             this.typeName = typeName;
             this.relevance = relevance;
+            this.distance = distance;
         }
 
         private Shop getShop() {
@@ -156,6 +225,10 @@ public class ShopContextService {
 
         private int getRelevance() {
             return relevance;
+        }
+
+        private Double getDistance() {
+            return distance;
         }
 
         private Integer getScore() {

@@ -43,7 +43,7 @@ class ShopContextServiceTest {
                 .contains("地址：地址")
                 .contains("人均：50")
                 .contains("评分：4.5")
-                .doesNotContain("图片", "经度", "营业时间");
+                .doesNotContain("图片", "经度", "营业时间", "距离：");
         assertThat(context.split("名称：", -1).length - 1).isLessThanOrEqualTo(8);
     }
 
@@ -60,6 +60,41 @@ class ShopContextServiceTest {
 
         assertThat(context).isEqualTo(ShopContextService.NO_MATCH_CONTEXT);
         assertThat(context).doesNotContain("西湖咖啡");
+    }
+
+    @Test
+    void retrieveExpandsGatheringIntentToFoodShops() {
+        IShopService shopService = mock(IShopService.class);
+        IShopTypeService shopTypeService = mock(IShopTypeService.class);
+        when(shopService.list()).thenReturn(java.util.Arrays.asList(
+                new Shop().setId(1L).setName("好友餐厅").setTypeId(1L),
+                new Shop().setId(2L).setName("唱歌馆").setTypeId(2L)));
+        when(shopTypeService.list()).thenReturn(java.util.Arrays.asList(
+                new ShopType().setId(1L).setName("美食"),
+                new ShopType().setId(2L).setName("KTV")));
+
+        String context = new ShopContextService(shopService, shopTypeService)
+                .retrieve("附近有什么适合朋友聚餐的店？");
+
+        assertThat(context).contains("名称：好友餐厅")
+                .doesNotContain("名称：唱歌馆");
+    }
+
+    @Test
+    void retrieveRanksNearbyCategoryMatchesByDistanceAndFormatsIt() {
+        IShopService shopService = mock(IShopService.class);
+        IShopTypeService shopTypeService = mock(IShopTypeService.class);
+        when(shopService.list()).thenReturn(java.util.Arrays.asList(
+                new Shop().setId(1L).setName("远处餐厅").setTypeId(1L).setX(120.1D).setY(30.0D),
+                new Shop().setId(2L).setName("附近餐厅").setTypeId(1L).setX(120.0D).setY(30.0D)));
+        when(shopTypeService.list()).thenReturn(java.util.Collections.singletonList(
+                new ShopType().setId(1L).setName("美食")));
+
+        String context = new ShopContextService(shopService, shopTypeService)
+                .retrieve("附近美食", 120.0D, 30.0D);
+
+        assertThat(context).contains("距离：0.0km");
+        assertThat(context.indexOf("名称：附近餐厅")).isLessThan(context.indexOf("名称：远处餐厅"));
     }
 
     @Test
