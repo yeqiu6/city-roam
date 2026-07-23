@@ -187,6 +187,17 @@ mvn spring-boot:run
 
 后端服务运行在 `http://localhost:8081`
 
+### AI 手动调用（可选）
+
+仅在需要真实手动调用 AI 时，在当前 PowerShell 会话中设置密钥并启动后端：
+
+```powershell
+$env:AI_API_KEY = '<your-dashscope-api-key>'
+mvn spring-boot:run
+```
+
+密钥不得放入任何文件、源码或配置中。`ai.enabled: true` 也仅在真实手动调用 AI 时需要；常规开发和测试不需要启用它。
+
 ### 5. 启动前端
 
 进入 `nginx-1.18.0` 目录，**双击 `nginx.exe`** 即可启动前端服务，Nginx 会在后台运行。

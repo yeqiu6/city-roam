@@ -41,6 +41,18 @@
   <div class="blog-content">
     <textarea v-model="params.content" placeholder="最近打卡了什么地方，有什么新奇体验呢？"></textarea>
   </div>
+  <div class="ai-review-row">
+    <label for="ai-review-style">AI 帮我写点评</label>
+    <select id="ai-review-style" v-model="aiStyle" aria-label="选择点评风格">
+      <option value="真诚自然">真诚自然</option>
+      <option value="活泼分享">活泼分享</option>
+      <option value="简洁推荐">简洁推荐</option>
+    </select>
+    <button type="button" @click="generateAiReview" :disabled="!params.shopId || aiGenerating">
+      {{aiGenerating ? '生成中…' : 'AI 帮我写点评'}}
+    </button>
+    <span v-if="aiGenerating" class="ai-review-status" role="status">正在生成，完成后会替换正文</span>
+  </div>
   <div class="divider"></div>
   <div class="blog-shop" @click="showDialog=true">
     <div class="shop-left">关联商户</div>
@@ -89,9 +101,14 @@
         shops: [], // 商户信息
         shopName: "", //商户名称
         selectedShop: {}, // 选中的商户
+        aiStyle: "真诚自然",
+        aiGenerating: false,
+        aiConversationId: "",
       }
     },
     created() {
+      this.aiConversationId = sessionStorage.getItem("city-roam-ai-conversation") || this.createConversationId();
+      sessionStorage.setItem("city-roam-ai-conversation", this.aiConversationId);
       this.checkLogin();
       this.queryShops();
     },
@@ -103,6 +120,7 @@
       },
       selectShop(s) {
         this.selectedShop = s;
+        this.$set(this.params, "shopId", s.id);
         this.showDialog = false;
       },
       submitBlog() {
@@ -149,6 +167,91 @@
       },
       goBack() {
         history.back();
+      },
+      createConversationId() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, character => {
+          const random = Math.floor(Math.random() * 16);
+          return (character === "x" ? random : (random & 0x3) | 0x8).toString(16);
+        });
+      },
+      async generateAiReview() {
+        if (!this.params.shopId || this.aiGenerating) {
+          return;
+        }
+        const title = (this.params.title || "").trim();
+        const content = (this.params.content || "").trim();
+        if (!title || !content) {
+          this.$message.warning("请先填写标题和正文，再生成点评");
+          return;
+        }
+        this.aiGenerating = true;
+        let generated = "";
+        let completed = false;
+        let failed = false;
+        try {
+          const response = await fetch("/api/ai/review/stream", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              authorization: sessionStorage.getItem("token") || ""
+            },
+            body: JSON.stringify({
+              conversationId: this.aiConversationId,
+              shopId: this.params.shopId,
+              title,
+              content,
+              style: this.aiStyle
+            })
+          });
+          if (!response.ok || !response.body) {
+            throw new Error("AI 服务暂不可用，请稍后再试");
+          }
+          await this.readAiStream(response, (event, data) => {
+            if (event === "token") {
+              generated += data;
+            } else if (event === "done") {
+              completed = true;
+            } else if (event === "error") {
+              this.$message.error(data || "AI 服务暂不可用，请稍后再试");
+              failed = true;
+            }
+          });
+          if (completed) {
+            this.$set(this.params, "content", generated);
+          } else if (!failed) {
+            throw new Error("AI 服务暂不可用，请稍后再试");
+          }
+        } catch (error) {
+          this.$message.error("AI 服务暂不可用，请稍后再试");
+        } finally {
+          this.aiGenerating = false;
+        }
+      },
+      async readAiStream(response, onEvent) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const chunk = await reader.read();
+          buffer += decoder.decode(chunk.value || new Uint8Array(), {stream: !chunk.done});
+          const blocks = buffer.split(/\r?\n\r?\n/);
+          buffer = blocks.pop();
+          blocks.forEach(block => this.handleAiEvent(block, onEvent));
+          if (chunk.done) {
+            break;
+          }
+        }
+        if (buffer.trim()) {
+          this.handleAiEvent(buffer, onEvent);
+        }
+      },
+      handleAiEvent(block, onEvent) {
+        const event = (block.match(/^event:\s*(.+)$/m) || [])[1];
+        const data = block.split(/\r?\n/).filter(line => line.indexOf("data:") === 0)
+          .map(line => line.slice(5).replace(/^ /, "")).join("\n");
+        if (event) {
+          onEvent(event.trim(), data);
+        }
       },
       handleRemove(file) {
         console.log(file);

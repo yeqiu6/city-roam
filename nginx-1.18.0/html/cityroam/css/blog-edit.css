@@ -173,5 +173,43 @@ input:focus,textarea:focus {
     font-weight: bold;
 }
 
+.ai-review-row {
+    padding: 8px 15px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid #f4f4f5;
+}
+.ai-review-row label {
+    color: #111;
+    font-size: 14px;
+    font-weight: bold;
+}
+.ai-review-row select {
+    flex: 1;
+    min-width: 110px;
+    padding: 7px 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    background: #fff;
+    color: #4a4a4a;
+}
+.ai-review-row button {
+    border: 0;
+    border-radius: 15px;
+    padding: 8px 12px;
+    color: #fff;
+    background: var(--roam-blue);
+}
+.ai-review-row button:disabled {
+    background: #c0c4cc;
+}
+.ai-review-status {
+    width: 100%;
+    color: #82848a;
+    font-size: 12px;
+}
+
 .header { background: linear-gradient(135deg, var(--roam-navy), var(--roam-blue)); }
 .shop-dialog, .info-box, .edit-container { border-radius: 14px; box-shadow: var(--roam-card-shadow); }

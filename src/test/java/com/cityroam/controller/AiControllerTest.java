@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
+import org.springframework.http.MediaType;
 
 import java.util.Arrays;
 
@@ -46,6 +47,7 @@ class AiControllerTest {
                         .contentType("application/json")
                         .content("{\"conversationId\":\"abc\",\"message\":\"\\u4f60\\u597d\"}"))
                 .andReturn();
+        assertThat(result.getResponse().getContentType()).startsWith(MediaType.TEXT_EVENT_STREAM_VALUE);
         result.getAsyncResult();
 
         String body = result.getResponse().getContentAsString();
@@ -113,6 +115,7 @@ class AiControllerTest {
                         .contentType("application/json")
                         .content("{\"conversationId\":\"abc\",\"shopId\":1,\"title\":\"title\",\"content\":\"content\",\"style\":\"style\"}"))
                 .andReturn();
+        assertThat(result.getResponse().getContentType()).startsWith(MediaType.TEXT_EVENT_STREAM_VALUE);
         result.getAsyncResult();
 
         String body = result.getResponse().getContentAsString();
