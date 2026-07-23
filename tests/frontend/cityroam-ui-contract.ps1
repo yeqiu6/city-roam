@@ -17,4 +17,9 @@ foreach ($icon in $requiredIcons) {
 $travelCss = Get-Content -Raw (Join-Path $root 'css/travel-ui.css')
 if ($travelCss -notmatch '(?s)\.travel-page\s*\{[^}]*box-sizing:\s*border-box') { throw 'travel-page must use border-box sizing' }
 
+$footer = Get-Content -Raw (Join-Path $root 'js/footer.js')
+if ($footer -notmatch "comingSoon\('漫游地图'\)") { throw 'Map navigation is not a coming-soon action' }
+if ($footer -notmatch "comingSoon\('消息中心'\)") { throw 'Message navigation is not a coming-soon action' }
+if ($footer -notmatch 'location\.href = "/blog-edit\.html"') { throw 'Publish navigation changed' }
+
 Write-Output 'CityRoam frontend shared UI contract passed.'
