@@ -1,5 +1,11 @@
 server:
   port: 8081
+ai:
+  enabled: false
+  base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  model-name: qwen-plus
+  connect-timeout-millis: 5000
+  read-timeout-millis: 60000
 spring:
   application:
     name: city-roam
