@@ -169,6 +169,14 @@
           return (character === "x" ? random : (random & 0x3) | 0x8).toString(16);
         });
       },
+      async getAiLocation() {
+        if (!navigator.geolocation) return {};
+        return new Promise(resolve => navigator.geolocation.getCurrentPosition(
+          position => resolve({longitude: position.coords.longitude, latitude: position.coords.latitude}),
+          () => resolve({}),
+          {enableHighAccuracy: false, timeout: 3000, maximumAge: 60000}
+        ));
+      },
       async sendAiQuestion() {
         const question = this.aiQuestion.trim();
         if (!question || this.aiLoading) {
@@ -181,13 +189,14 @@
         let completed = false;
         let failed = false;
         try {
+          const location = await this.getAiLocation();
           const response = await fetch("/api/ai/chat/stream", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               authorization: sessionStorage.getItem("token") || ""
             },
-            body: JSON.stringify({conversationId: this.aiConversationId, message: question})
+            body: JSON.stringify({conversationId: this.aiConversationId, message: question, ...location})
           });
           if (!response.ok || !response.body) {
             throw new Error("AI 服务暂不可用，请稍后再试");
