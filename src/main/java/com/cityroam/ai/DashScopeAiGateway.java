@@ -4,8 +4,11 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.cityroam.config.AiProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,12 +27,14 @@ import java.util.function.Supplier;
 @Component
 public class DashScopeAiGateway implements AiGateway {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DashScopeAiGateway.class);
     private static final String CONFIGURATION_ERROR = "AI\u670d\u52a1\u6682\u672a\u5f00\u542f";
     private static final String UPSTREAM_ERROR = "AI\u670d\u52a1\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5";
 
     private final AiProperties properties;
     private final Supplier<String> apiKeySupplier;
 
+    @Autowired
     public DashScopeAiGateway(AiProperties properties) {
         this(properties, () -> System.getenv("AI_API_KEY"));
     }
@@ -63,10 +68,15 @@ public class DashScopeAiGateway implements AiGateway {
 
             int status = connection.getResponseCode();
             if (status < 200 || status >= 300) {
+                LOG.warn("DashScope streaming request returned HTTP status {}", status);
                 throw new IOException("Unexpected upstream response status");
             }
             readEvents(connection.getInputStream(), consumer);
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException e) {
+            LOG.warn("DashScope streaming request failed with {}", e.getClass().getSimpleName());
+            throw new IllegalStateException(UPSTREAM_ERROR);
+        } catch (RuntimeException e) {
+            LOG.warn("DashScope streaming response processing failed with {}", e.getClass().getSimpleName());
             throw new IllegalStateException(UPSTREAM_ERROR);
         } finally {
             if (connection != null) {
