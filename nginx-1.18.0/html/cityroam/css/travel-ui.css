@@ -1,0 +1,102 @@
+:root {
+  --travel-ink: #143042;
+  --travel-blue: #1d7f8c;
+  --travel-coral: #f06f52;
+  --travel-canvas: #f8f7f2;
+  --travel-line: #e8e5dc;
+  --travel-radius: 20px;
+}
+
+.travel-page {
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--travel-ink);
+  background: var(--travel-canvas);
+}
+
+.travel-card {
+  padding: 20px;
+  border: 1px solid var(--travel-line);
+  border-radius: var(--travel-radius);
+  background: #fff;
+}
+
+.travel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--travel-blue);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--travel-blue);
+  cursor: pointer;
+}
+
+.travel-button--secondary {
+  color: var(--travel-blue);
+  background: #fff;
+}
+
+.travel-icon {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.18em;
+  background: currentColor;
+  -webkit-mask: var(--travel-icon) center/contain no-repeat;
+  mask: var(--travel-icon) center/contain no-repeat;
+}
+
+.travel-icon--home { --travel-icon: url('/imgs/icons/house.svg'); }
+.travel-icon--map { --travel-icon: url('/imgs/icons/map.svg'); }
+.travel-icon--publish { --travel-icon: url('/imgs/icons/plus.svg'); }
+.travel-icon--message { --travel-icon: url('/imgs/icons/messages-square.svg'); }
+.travel-icon--profile { --travel-icon: url('/imgs/icons/user-round.svg'); }
+.travel-icon--back { --travel-icon: url('/imgs/icons/chevron-left.svg'); }
+.travel-icon--search { --travel-icon: url('/imgs/icons/search.svg'); }
+.travel-icon--pin { --travel-icon: url('/imgs/icons/map-pin.svg'); }
+.travel-icon--heart { --travel-icon: url('/imgs/icons/heart.svg'); }
+.travel-icon--close { --travel-icon: url('/imgs/icons/x.svg'); }
+.travel-icon--send { --travel-icon: url('/imgs/icons/send.svg'); }
+.travel-icon--sparkles { --travel-icon: url('/imgs/icons/sparkles.svg'); }
+.travel-icon--edit { --travel-icon: url('/imgs/icons/pencil.svg'); }
+.travel-icon--ticket { --travel-icon: url('/imgs/icons/ticket.svg'); }
+.travel-icon--star { --travel-icon: url('/imgs/icons/star.svg'); }
+.travel-icon--camera { --travel-icon: url('/imgs/icons/camera.svg'); }
+.travel-icon--logout { --travel-icon: url('/imgs/icons/log-out.svg'); }
+
+.is-loading {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.empty-state {
+  padding: 48px 24px;
+  color: var(--travel-ink);
+  text-align: center;
+}
+
+.skeleton {
+  min-height: 1em;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ece9e1 25%, #f7f5ef 37%, #ece9e1 63%);
+  background-size: 400% 100%;
+  animation: travel-skeleton 1.4s ease infinite;
+}
+
+@keyframes travel-skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
