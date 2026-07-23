@@ -8,6 +8,9 @@ import com.cityroam.dto.AiChatRequest;
 import com.cityroam.dto.AiReviewRequest;
 import com.cityroam.dto.UserDTO;
 import com.cityroam.utils.UserHolder;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/ai")
@@ -28,18 +30,22 @@ public class AiController {
 
     private static final String INVALID_REQUEST = "\u8bf7\u6c42\u53c2\u6570\u4e0d\u5408\u6cd5";
     private static final String UNAVAILABLE = "AI\u670d\u52a1\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5";
+    private static final String BUSY = "AI\u670d\u52a1\u7e41\u5fd9\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5";
 
     private final AiGateway gateway;
     private final AiConversationService conversationService;
     private final AiPromptService promptService;
     private final ShopContextService shopContextService;
+    private final TaskExecutor aiSseTaskExecutor;
 
     public AiController(AiGateway gateway, AiConversationService conversationService,
-                        AiPromptService promptService, ShopContextService shopContextService) {
+                        AiPromptService promptService, ShopContextService shopContextService,
+                        @Qualifier("aiSseTaskExecutor") TaskExecutor aiSseTaskExecutor) {
         this.gateway = gateway;
         this.conversationService = conversationService;
         this.promptService = promptService;
         this.shopContextService = shopContextService;
+        this.aiSseTaskExecutor = aiSseTaskExecutor;
     }
 
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
@@ -47,7 +53,7 @@ public class AiController {
         utf8(response);
         Long userId = currentUserId();
         SseEmitter emitter = new SseEmitter(70000L);
-        CompletableFuture.runAsync(() -> streamChat(emitter, userId, request));
+        execute(emitter, () -> streamChat(emitter, userId, request));
         return emitter;
     }
 
@@ -56,7 +62,7 @@ public class AiController {
         utf8(response);
         Long userId = currentUserId();
         SseEmitter emitter = new SseEmitter(70000L);
-        CompletableFuture.runAsync(() -> streamReview(emitter, userId, request));
+        execute(emitter, () -> streamReview(emitter, userId, request));
         return emitter;
     }
 
@@ -108,6 +114,14 @@ public class AiController {
             throw new IllegalStateException("\u672a\u767b\u5f55");
         }
         return user.getId();
+    }
+
+    private void execute(SseEmitter emitter, Runnable task) {
+        try {
+            aiSseTaskExecutor.execute(task);
+        } catch (TaskRejectedException e) {
+            error(emitter, BUSY);
+        }
     }
 
     private void utf8(HttpServletResponse response) {
