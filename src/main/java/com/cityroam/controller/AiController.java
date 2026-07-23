@@ -74,9 +74,15 @@ public class AiController {
         }
         StringBuilder answer = new StringBuilder();
         try {
+            Double longitude = request.getLongitude();
+            Double latitude = request.getLatitude();
+            if (!validCoordinate(longitude, latitude)) {
+                longitude = null;
+                latitude = null;
+            }
             List<AiGateway.AiMessage> messages = promptService.chatMessages(
                     conversationService.load(userId, request.getConversationId()),
-                    shopContextService.retrieve(request.getMessage()), request.getMessage());
+                    shopContextService.retrieve(request.getMessage(), longitude, latitude), request.getMessage());
             gateway.stream(messages, token -> {
                 answer.append(token);
                 send(emitter, "token", token);
@@ -137,6 +143,12 @@ public class AiController {
 
     private boolean validConversation(String conversationId) {
         return valid(conversationId, 64);
+    }
+
+    private boolean validCoordinate(Double longitude, Double latitude) {
+        return longitude != null && latitude != null
+                && longitude >= -180D && longitude <= 180D
+                && latitude >= -90D && latitude <= 90D;
     }
 
     private boolean valid(String value, int maxLength) {

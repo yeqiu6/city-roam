@@ -69,7 +69,7 @@ class AiControllerTest {
             consumer.accept("好");
         };
         org.mockito.Mockito.when(conversations.load(7L, "abc")).thenReturn(Arrays.asList("user:旧问题"));
-        org.mockito.Mockito.when(shopContext.retrieve("西湖咖啡在哪里")).thenReturn(
+        org.mockito.Mockito.when(shopContext.retrieve("西湖咖啡在哪里", null, null)).thenReturn(
                 "名称：西湖咖啡\n分类：咖啡\n地址：西湖路\n人均：50\n评分：4.5");
         MockMvc mvc = mockMvc(gateway, conversations, prompts, shopContext, asyncExecutor());
         saveUser();
@@ -85,7 +85,46 @@ class AiControllerTest {
         assertThat(captured.get().get(1).getContent())
                 .contains("名称：西湖咖啡", "分类：咖啡", "地址：西湖路", "人均：50", "评分：4.5");
         assertThat(captured.get().get(captured.get().size() - 1).getContent()).isEqualTo("西湖咖啡在哪里");
-        verify(shopContext).retrieve("西湖咖啡在哪里");
+        verify(shopContext).retrieve("西湖咖啡在哪里", null, null);
+    }
+
+    @Test
+    void chatPassesValidCoordinatesToShopContextRetrieval() throws Exception {
+        AiConversationService conversations = mock(AiConversationService.class);
+        ShopContextService shopContext = mock(ShopContextService.class);
+        AiGateway gateway = (messages, consumer) -> consumer.accept("好");
+        MockMvc mvc = mockMvc(gateway, conversations, new AiPromptService(), shopContext, asyncExecutor());
+        saveUser();
+
+        MvcResult result = mvc.perform(MockMvcRequestBuilders.post("/ai/chat/stream")
+                        .contentType("application/json")
+                        .content("{\"conversationId\":\"abc\",\"message\":\"附近美食\",\"longitude\":120.0,\"latitude\":30.0}"))
+                .andReturn();
+        result.getAsyncResult();
+
+        verify(shopContext).retrieve("附近美食", 120.0D, 30.0D);
+    }
+
+    @Test
+    void chatUsesNoLocationWhenCoordinatesAreMissingOrInvalid() throws Exception {
+        AiConversationService conversations = mock(AiConversationService.class);
+        ShopContextService shopContext = mock(ShopContextService.class);
+        AiGateway gateway = (messages, consumer) -> consumer.accept("好");
+        MockMvc mvc = mockMvc(gateway, conversations, new AiPromptService(), shopContext, asyncExecutor());
+        saveUser();
+
+        MvcResult missingCoordinates = mvc.perform(MockMvcRequestBuilders.post("/ai/chat/stream")
+                        .contentType("application/json")
+                        .content("{\"conversationId\":\"abc\",\"message\":\"附近美食\"}"))
+                .andReturn();
+        missingCoordinates.getAsyncResult();
+        MvcResult invalidCoordinates = mvc.perform(MockMvcRequestBuilders.post("/ai/chat/stream")
+                        .contentType("application/json")
+                        .content("{\"conversationId\":\"abc\",\"message\":\"附近美食\",\"longitude\":181.0,\"latitude\":30.0}"))
+                .andReturn();
+        invalidCoordinates.getAsyncResult();
+
+        verify(shopContext, org.mockito.Mockito.times(2)).retrieve("附近美食", null, null);
     }
 
     @Test

@@ -6,4 +6,6 @@ import lombok.Data;
 public class AiChatRequest {
     private String conversationId;
     private String message;
+    private Double longitude;
+    private Double latitude;
 }
