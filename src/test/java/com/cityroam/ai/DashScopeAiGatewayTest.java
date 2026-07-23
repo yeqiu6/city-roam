@@ -73,6 +73,41 @@ class DashScopeAiGatewayTest {
                 .hasMessage("AI服务暂未开启");
     }
 
+    @Test
+    void treatsPrematureEofWithoutDoneEventAsAnUpstreamError() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/chat/completions", exchange -> {
+            byte[] body = "data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n"
+                    .getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+
+        assertThatThrownBy(() -> gateway(true, "test-key").stream(
+                Arrays.asList(new AiGateway.AiMessage("user", "hello")), token -> { }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("AI服务暂时不可用，请稍后再试");
+    }
+
+    @Test
+    void treatsMalformedSseDataAsAnUpstreamError() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/chat/completions", exchange -> {
+            byte[] body = "data: not-json\n\ndata: [DONE]\n\n".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+
+        assertThatThrownBy(() -> gateway(true, "test-key").stream(
+                Arrays.asList(new AiGateway.AiMessage("user", "hello")), token -> { }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("AI服务暂时不可用，请稍后再试");
+    }
+
     private DashScopeAiGateway gateway(boolean enabled, String apiKey) {
         return new DashScopeAiGateway(properties(enabled), () -> apiKey);
     }

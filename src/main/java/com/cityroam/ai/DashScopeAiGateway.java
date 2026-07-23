@@ -101,18 +101,23 @@ public class DashScopeAiGateway implements AiGateway {
     private void readEvents(InputStream input, TokenConsumer consumer) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             String line;
+            boolean complete = false;
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("data:")) {
                     continue;
                 }
                 String data = line.substring(5).trim();
                 if ("[DONE]".equals(data)) {
-                    return;
+                    complete = true;
+                    break;
                 }
                 String token = token(data);
                 if (StringUtils.hasText(token)) {
                     consumer.accept(token);
                 }
+            }
+            if (!complete) {
+                throw new IOException("Upstream stream ended before completion");
             }
         }
     }

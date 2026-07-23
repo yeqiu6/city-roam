@@ -11,9 +11,10 @@ public class AiPromptService {
     private static final String CHAT_INSTRUCTION = "你是城市漫游助手。回答只能依据可信商铺上下文和对话历史，不得编造商铺、地址、评分或价格。";
     private static final String REVIEW_INSTRUCTION = "请根据可信商铺上下文与用户内容，仅生成约80字的中文点评。仅输出点评正文，不要包含标题、解释或其他内容。";
 
-    public List<AiGateway.AiMessage> chatMessages(List<String> history, String question) {
+    public List<AiGateway.AiMessage> chatMessages(List<String> history, String shopContext, String question) {
         List<AiGateway.AiMessage> messages = new ArrayList<>();
         messages.add(new AiGateway.AiMessage("system", CHAT_INSTRUCTION));
+        messages.add(new AiGateway.AiMessage("system", "可信商铺上下文：" + shopContext));
         if (history != null) {
             for (String item : history) {
                 messages.add(historyMessage(item));
@@ -39,7 +40,7 @@ public class AiPromptService {
             return new AiGateway.AiMessage("user", item);
         }
         String role = item.substring(0, separator);
-        if (!"assistant".equals(role) && !"system".equals(role) && !"user".equals(role)) {
+        if (!"assistant".equals(role) && !"user".equals(role)) {
             role = "user";
         }
         return new AiGateway.AiMessage(role, item.substring(separator + 1));

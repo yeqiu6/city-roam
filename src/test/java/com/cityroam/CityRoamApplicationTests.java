@@ -1,45 +1,33 @@
 package com.cityroam;
 
-import com.cityroam.service.impl.ShopServiceImpl;
 import com.cityroam.utils.RedisWorker;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
-import javax.annotation.Resource;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
- class CityRoamApplicationTests {
-    private ExecutorService es = Executors.newFixedThreadPool(500);
+class CityRoamApplicationTests {
 
-    @Resource
-    private ShopServiceImpl shopService;
-    @Resource
-    private RedisWorker redisWorker;
-
-    /*@Test
-     void testSaveShop() throws InterruptedException {
-        shopService.savaShop2Redis(1L,10L);
-    }*/
     @Test
-    void testNextId() throws InterruptedException {
+    void nextIdCombinesTimeAndDailyRedisSequenceWithoutExternalRedis() {
+        StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
+        @SuppressWarnings("unchecked")
+        ValueOperations<String, String> values = mock(ValueOperations.class);
+        when(redisTemplate.opsForValue()).thenReturn(values);
+        when(values.increment(startsWith("icrorder:"))).thenReturn(1L, 2L);
+        RedisWorker redisWorker = new RedisWorker(redisTemplate);
 
-        CountDownLatch latch = new CountDownLatch(300);
-        Runnable task = () -> {
-            for (int i = 0; i < 100; i++) {
-                long id = redisWorker.nextId("order");
-                System.out.println("id="+id);
-            }
-            latch.countDown();
-        };
-        long begin = System.currentTimeMillis();
-        for (int i = 0; i < 300; i++) {
-            es.execute(task);
-        }
-        latch.await();
-        long end = System.currentTimeMillis();
-        System.out.println("耗时："+(end-begin));
+        long first = redisWorker.nextId("order");
+        long second = redisWorker.nextId("order");
+
+        assertThat(first).isPositive();
+        assertThat(second).isGreaterThan(first);
+        verify(values, times(2)).increment(startsWith("icrorder:"));
     }
 }

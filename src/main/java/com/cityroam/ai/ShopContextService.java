@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class ShopContextService {
 
     private static final int CONTEXT_LIMIT = 8;
+    public static final String NO_MATCH_CONTEXT = "未找到与当前问题相关的商铺。";
 
     private final IShopService shopService;
     private final IShopTypeService shopTypeService;
@@ -32,13 +33,23 @@ public class ShopContextService {
     public String retrieve(String query) {
         List<Shop> shops = shopService.list();
         if (shops == null || shops.isEmpty()) {
-            return "";
+            return NO_MATCH_CONTEXT;
         }
         Map<Long, String> typeNames = typeNames();
         List<String> terms = terms(query);
+        if (terms.isEmpty()) {
+            return NO_MATCH_CONTEXT;
+        }
         List<RankedShop> rankedShops = new ArrayList<>();
         for (Shop shop : shops) {
-            rankedShops.add(new RankedShop(shop, typeNames.get(shop.getTypeId()), relevance(shop, typeNames.get(shop.getTypeId()), terms)));
+            String typeName = typeNames.get(shop.getTypeId());
+            int relevance = relevance(shop, typeName, terms);
+            if (relevance > 0) {
+                rankedShops.add(new RankedShop(shop, typeName, relevance));
+            }
+        }
+        if (rankedShops.isEmpty()) {
+            return NO_MATCH_CONTEXT;
         }
         rankedShops.sort(Comparator.comparingInt(RankedShop::getRelevance).reversed()
                 .thenComparing(RankedShop::getScore, Comparator.nullsLast(Comparator.reverseOrder()))
@@ -48,6 +59,17 @@ public class ShopContextService {
                 .limit(CONTEXT_LIMIT)
                 .map(this::format)
                 .collect(Collectors.joining("\n\n"));
+    }
+
+    public String retrieveById(Long shopId) {
+        if (shopId == null || shopId <= 0) {
+            return null;
+        }
+        Shop shop = shopService.getById(shopId);
+        if (shop == null) {
+            return null;
+        }
+        return format(new RankedShop(shop, typeNames().get(shop.getTypeId()), 0));
     }
 
     private Map<Long, String> typeNames() {

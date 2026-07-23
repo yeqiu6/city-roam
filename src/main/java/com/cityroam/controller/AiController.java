@@ -75,7 +75,8 @@ public class AiController {
         StringBuilder answer = new StringBuilder();
         try {
             List<AiGateway.AiMessage> messages = promptService.chatMessages(
-                    conversationService.load(userId, request.getConversationId()), request.getMessage());
+                    conversationService.load(userId, request.getConversationId()),
+                    shopContextService.retrieve(request.getMessage()), request.getMessage());
             gateway.stream(messages, token -> {
                 answer.append(token);
                 send(emitter, "token", token);
@@ -98,8 +99,12 @@ public class AiController {
             return;
         }
         try {
-            String query = request.getShopId() + " " + request.getTitle() + " " + request.getContent();
-            gateway.stream(promptService.reviewMessages(shopContextService.retrieve(query), request.getTitle(),
+            String shopContext = shopContextService.retrieveById(request.getShopId());
+            if (!StringUtils.hasText(shopContext)) {
+                error(emitter, INVALID_REQUEST);
+                return;
+            }
+            gateway.stream(promptService.reviewMessages(shopContext, request.getTitle(),
                     request.getContent(), request.getStyle()), token -> send(emitter, "token", token));
             send(emitter, "done", "");
             emitter.complete();
@@ -127,6 +132,7 @@ public class AiController {
     private void utf8(HttpServletResponse response) {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8");
+        response.setHeader("X-Accel-Buffering", "no");
     }
 
     private boolean validConversation(String conversationId) {
