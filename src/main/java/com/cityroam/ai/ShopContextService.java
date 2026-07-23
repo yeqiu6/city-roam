@@ -176,7 +176,7 @@ public class ShopContextService {
     }
 
     private boolean contains(String value, String term) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(term);
+        return value != null && value.toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT));
     }
 
     private String format(RankedShop rankedShop) {
