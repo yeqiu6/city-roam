@@ -40,6 +40,9 @@ public class AiConversationService {
     }
 
     public String key(Long userId, String conversationId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("userId must be positive");
+        }
         if (!StringUtils.hasText(conversationId) || conversationId.length() > 64) {
             throw new IllegalArgumentException("conversationId must be between 1 and 64 characters");
         }
