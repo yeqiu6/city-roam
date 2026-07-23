@@ -14,4 +14,7 @@ foreach ($icon in $requiredIcons) {
   if (-not (Test-Path (Join-Path $root "imgs/icons/$icon.svg"))) { throw "Missing local icon: $icon.svg" }
 }
 
+$travelCss = Get-Content -Raw (Join-Path $root 'css/travel-ui.css')
+if ($travelCss -notmatch '(?s)\.travel-page\s*\{[^}]*box-sizing:\s*border-box') { throw 'travel-page must use border-box sizing' }
+
 Write-Output 'CityRoam frontend shared UI contract passed.'

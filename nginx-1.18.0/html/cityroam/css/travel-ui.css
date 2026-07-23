@@ -9,6 +9,7 @@
 
 .travel-page {
   width: min(100%, 1200px);
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 24px;
   color: var(--travel-ink);
