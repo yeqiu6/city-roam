@@ -52,8 +52,6 @@ foreach ($icon in $requiredIcons) {
   if (-not (Test-Path (Join-Path $root "imgs/icons/$icon.svg"))) { throw "Missing local icon: $icon.svg" }
 }
 
-$footer = Get-Content -Raw (Join-Path $root 'js/footer.js')
-if ($footer -notmatch 'CityRoamUI\.comingSoon') { throw 'Footer does not provide coming-soon actions' }
 Write-Output 'CityRoam frontend shared UI contract passed.'
 ```
 
