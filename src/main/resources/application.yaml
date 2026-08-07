@@ -1,7 +1,7 @@
 server:
   port: 8081
 ai:
-  enabled: false
+  enabled: true
   base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
   model-name: qwen-plus
   connect-timeout-millis: 5000
